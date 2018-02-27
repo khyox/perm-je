@@ -1,0 +1,214 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
+<html lang="en" dir="ltr">
+<head>
+<title>Perm</title>
+<meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
+
+</head>
+<body class="mediawiki ltr ns-0 ns-subject page-Perm skin-monobook">
+<h1 id="firstHeading" class="firstHeading">Perm</h1>
+<!-- start content -->
+<p>PERM is a 'C' library for persistent heap management and is intended for use with a dynamic-memory allocator (e.g. malloc, free). A key feature of this library is that integration with the allocation functions from various heap managers or a custom manager should be simple. PERM has been integrated with <a href="http://www.canonware.com/jemalloc/" class="external text" rel="nofollow">jemalloc</a> with very little change.
+</p>
+<table id="toc" class="toc"><tr><td><div id="toctitle"><h2>Contents</h2></div>
+<ul>
+<li class="toclevel-1 tocsection-1"><a href="#New_Features"><span class="tocnumber">1</span> <span class="toctext">New Features</span></a></li>
+<li class="toclevel-1 tocsection-2"><a href="#Source_Location"><span class="tocnumber">2</span> <span class="toctext">Source Location</span></a></li>
+<li class="toclevel-1 tocsection-3"><a href="#Setup_.28perm-je.29"><span class="tocnumber">3</span> <span class="toctext">Setup (perm-je)</span></a></li>
+<li class="toclevel-1 tocsection-4"><a href="#Programing_Interface"><span class="tocnumber">4</span> <span class="toctext">Programing Interface</span></a></li>
+<li class="toclevel-1 tocsection-5"><a href="#Usage"><span class="tocnumber">5</span> <span class="toctext">Usage</span></a>
+<ul>
+<li class="toclevel-2 tocsection-6"><a href="#Example_Program"><span class="tocnumber">5.1</span> <span class="toctext">Example Program</span></a></li>
+<li class="toclevel-2 tocsection-7"><a href="#C.2B.2B_Support"><span class="tocnumber">5.2</span> <span class="toctext">C++ Support</span></a></li>
+<li class="toclevel-2 tocsection-6"><a href="#Environment Variables"><span class="tocnumber">5.3</span> <span class="toctext">Environment Variables</span></a></li>
+</ul>
+</li>
+<li class="toclevel-1 tocsection-8"><a href="#Kernel_Parameters"><span class="tocnumber">6</span> <span class="toctext">Kernel Parameters</span></a></li>
+</ul>
+</td></tr></table>
+<h2> <span class="mw-headline" id="New_Features"> New Features </span></h2>
+<ul><li> Persistent functions are in one module (perma.c) to aid in experimentation with alternate malloc implementations or integration with a 'C++' class that supports multiple persistent heaps.
+</li><li> Persistent global variables can be registered dynamically with the perm(void *ptr, size_t size) function.
+</li><li> A backup file is specified separately from the mmap file. This allows the two files to reside on different media.
+</li><li> The usage of a memory mapped heap and a backup file are separated. Two functions (mflush &amp; backup) operate independently on each.
+</li></ul>
+<h2> <span class="mw-headline" id="Source_Location"> Source Location </span></h2>
+<p>The source may be obtained by:
+</p>
+<pre> download perm-je-latest.tgz
+ tar -xzf perm-je-latest.tgz
+</pre>
+<h2> <span class="mw-headline" id="Setup_.28perm-je.29"> Setup (perm-je) </span></h2>
+<p>The PERM library has been integrated with the <a href="http://www.canonware.com/jemalloc/" class="external text" rel="nofollow">jemalloc</a> source tree. After a build and install, you effectively have a jemalloc release with the extra PERM functions.
+</p><p>To build, test, and install in your home directory, use the following commands. Uninitialized variable warnings from the compiler are normal in this case and are left by default for performance reasons.
+</p>
+<pre> ./configure --prefix=$HOME/local
+ make
+ make check
+ make install
+</pre>
+<p>If you want to add a prefix to the allocation functions (e.g. "je" to malloc() ) then use the configure option:
+</p>
+<pre> ./configure --with-jemalloc-prefix=je --prefix=$HOME/local
+ make
+ ...
+</pre>
+<p>When you compile and link your program with the library use -ljemalloc. You may also need to indicate the path to the include files and library.
+</p>
+<pre> gcc example.c -Iinclude -Llib -ljemalloc -o example
+</pre>
+<p>If you link with the shared library, you will need to tell the loader the library path:
+</p>
+<pre> export LD_LIBRARY_PATH=$HOME/local/lib:$LD_LIBRARY_PATH
+</pre>
+<h2> <span class="mw-headline" id="Programing_Interface"> Programing Interface </span></h2>
+<pre> /* Register a block as persistent memory */
+ int perm(void *ptr, size_t size);
+ 
+ /* Open and map file into core memory */
+ int mopen(const char *fname, const char *mode, size_t size);
+ 
+ /* Close memory-mapped file */
+ int mclose(void);
+ 
+ /* Flushes in-core data to memory-mapped file */
+ int mflush(void);
+ 
+ /* Open backup file */
+ int bopen(const char *fname, const char *mode);
+ 
+ /* Close backup file */
+ int bclose(void);
+ 
+ /* Backup globals and heap to backup file */
+ int backup(void);
+ 
+ /* Restore globals and heap from backup file */
+ int restore(void);
+</pre>
+<h2> <span class="mw-headline" id="Usage"> Usage </span></h2>
+<p>The functions perm(), mopen(), and bopen() should be called before any allocation functions (e.g. malloc(), calloc()). Global variables are registered as persistent by calling the perm() function at run time. By using the PERM attribute in a declaration, global variables will be combined by the linker into a contiguous block. Only one call to perm() is needed to register global variables included in the PERM block. Predefined macros give the start address and size of the PERM block. The following two methods accomplish the same task.
+</p>
+<pre> PERM int garray[10]; /* with PERM attribute */
+ PERM char gbuf[80];
+ 
+ int main(void) {
+     perm(PERM_START, PERM_SIZE); /* combined block */
+     ...
+ }
+</pre>
+<p>or
+</p>
+<pre> int garray[10]; /* no PERM attribute */
+ char gbuf[80];
+ 
+ int main(void) {
+     perm(garray, sizeof(garray)); /* individual blocks */
+     perm(gbuf, sizeof(gbuf));
+     ...
+ }
+</pre>
+<h3> <span class="mw-headline" id="Example_Program"> Example Program </span></h3>
+<pre> /* 'C' program showing usage of persistent memory functions */
+ 
+ #include &lt;stdio.h&gt;
+ #include &lt;string.h&gt;
+ 
+ /* use JEMALLOC_MANGLE if: configure --with-jemalloc-prefix=je */
+ /* #define JEMALLOC_MANGLE */
+ #include "jemalloc/jemalloc.h"
+ 
+ #define BACK_FILE "/tmp/app.back" /* Note: different backup and mmap files */
+ #define MMAP_FILE "/tmp/app.mmap"
+ #define MMAP_SIZE ((size_t)1 &lt;&lt; 30)
+ 
+ typedef struct {
+     /* ... */
+ } home_st;
+ 
+ PERM home_st *home; /* use PERM to mark home as persistent */
+ 
+ int main(int argc, char *argv[])
+ {
+     int do_restore = argc &gt; 1 &amp;&amp; strcmp("-r", argv[1]) == 0;
+     char *mode = (do_restore)&nbsp;? "r+"&nbsp;: "w+";
+ 
+     /* call perm() and mopen() before malloc() */
+     perm(PERM_START, PERM_SIZE);
+     mopen(MMAP_FILE, mode, MMAP_SIZE);
+     bopen(BACK_FILE, mode);
+     if (do_restore) {
+         restore();
+     } else {
+         home = (home_st *)malloc(sizeof(home_st));
+         /* initialize home struct... */
+         mflush(); backup();
+     }
+ 
+     for (;/* each step */;) {
+         /* Application_Step(); */
+         backup();
+     }
+ 
+     free(home);
+     mclose();
+     bclose();
+     return(0);
+ }
+</pre>
+<h3> <span class="mw-headline" id="C.2B.2B_Support"> C++ Support </span></h3>
+<p>For C++ programs, include the header file "pallocator.h" instead of "jemalloc.h". This C++ specific header file has a persistent memory allocator (PERM_NS::allocator&lt;type&gt;) for use with the standard template library (STL). It also defines allocation macros (PERM_NEW, PERM_DELETE, PERM_FREE) and defines overrides for the new and delete operators. If PERM_OVERRIDE_NEW is defined, the global new and delete operators will be overridden to use persistent memory for all allocations. The override is not necessary if JEMALLOC_MANGLE is not used, since the global new and delete operators typically use malloc() and free(). Also, usage of the persistent STL allocator is not necessary if global new and delete operators use persistent memory. Use the PERM_FREE macro for fundamental types that do not have a destructor since PERM_NEW and PERM_DELETE will call the constructor or destructor for an object. See the file "example.cpp" in the source release for a complete C++ example. To execute the example and experiment with perm, run the script "example.sh" from the top level source directory. The following code fragments demonstrate C++ usage.
+</p>
+<pre> #include &lt;list&gt;
+ #define JEMALLOC_MANGLE // use if configured --with-jemalloc-prefix=je
+ // #define PERM_OVERRIDE_NEW // use to override new and delete operators
+ #include "jemalloc/pallocator.h"
+ using namespace std;
+ 
+ class globals {/* ... */};
+ 
+ PERM globals *home; /* use PERM to mark home as persistent */
+ PERM list&lt;int, PERM_NS::allocator&lt;int&gt; &gt; plist;
+ 
+ int main(int argc, char *argv[])
+ {
+     ...
+     home = PERM_NEW(globals);
+     plist.push_back(/* ... */);
+     ...
+     PERM_DELETE(home, globals);
+     return(0);
+ }
+</pre>
+<h3> <span class="mw-headline" id="Environment Variables"> Environment Variables </span></h3>
+<p>When creating a new persistent heap with mopen(), a default virtual base address for the heap is determined by the system. The heap base address can also be specified with the PERM_ADDRESS environment variable and it must be 4MiB aligned.
+</p>
+<pre> export PERM_ADDRESS=0x7f983f400000
+</pre>
+<p>The PERM_ADDRESS environment variable will only be evaluated when a new heap and mapping file are created with mopen() and not when an existing memory-map file is opened. An existing map file will use the virtual base address stored in the file.
+</p>
+<p>PERM can be used without any change to application source code by using environment variables to specify the arguments to an mopen() call. Given the following variables, PERM will create and open a 4GiB mmap file called "program.mmap" on the first call to a memory allocation function.
+</p>
+<pre> export PERM_FNAME=/mnt/flash/program.mmap
+ export PERM_MODE=w+
+ export PERM_SIZE=4G
+</pre>
+<p>The PERM function mclose() will also be called at program termination. When specifying PERM_SIZE, the letters K, M, and G indicate powers of 1024. If PERM_FNAME is not defined in the environment, and mopen() is not called before a memory allocation function (e.g. malloc(), calloc()), the allocator will memory-map anonymous pages.
+</p>
+<p>Pre-compiled applications that dynamically link to the system malloc library can still use persistent memory by pre-loading the PERM library with the command:
+</p>
+<pre> env LD_PRELOAD=$HOME/local/lib/libjemalloc.so program -arg1 -arg2
+</pre>
+<h2> <span class="mw-headline" id="Kernel_Parameters"> Kernel Parameters </span></h2>
+<p>Turn off periodic flush to file and dirty ratio flush
+</p>
+<pre> echo 0 &gt; /proc/sys/vm/dirty_writeback_centisecs
+ echo 100 &gt; /proc/sys/vm/dirty_background_ratio
+ echo 100 &gt; /proc/sys/vm/dirty_ratio
+</pre>
+<p>Turn off address space randomization
+</p>
+<pre> echo 0 &gt; /proc/sys/kernel/randomize_va_space
+</pre>
+
+</body></html>

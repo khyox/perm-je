@@ -1,0 +1,10 @@
+Test begin
+idx:32 - before backup();
+idx:64 - before mflush();
+idx:96 - before backup();
+idx:143 - before restore();
+idx:96 - after restore();
+idx:160 - before backup();
+idx:192 - before mflush();
+idx:224 - before backup();
+Test end

@@ -1,0 +1,120 @@
+Center for Applied Scientific Computing
+Software Release Abstract
+
+1. Identification.
+
+  a. Software Acronym.
+    PERM
+  b. Short or Keywords in context (KWIC) title.
+    Persistent heap management library
+
+2. Developer Name(s) and Affiliation.
+
+  G. Scott Lloyd - LLNL
+  Daniel Wong - University of Southern California and LLNL
+  Maya Gokhale - LLNL
+
+3. Software Completion Date. 
+
+  1-17-2012 
+
+4. Brief Description. 
+
+  PERM is a 'C' library for persistent heap management and is intended for 
+  use with a dynamic-memory allocator (e.g. malloc, free). The PERM memory 
+  allocator replaces the standard 'C' dynamic memory allocation functions 
+  with compatible versions that provide persistent memory to application 
+  programs. Memory allocated with the PERM allocator will persist between 
+  program invocations after a call to a checkpoint function. This function 
+  essentially saves the state of the heap and registered global variables 
+  to a file which may reside in flash memory or other node local storage. 
+  A few other functions are also provided by the library to manage 
+  checkpoint files. Global variables in an application can be marked 
+  persistent and be included in a checkpoint by using a compiler attribute 
+  defined as PERM. The PERM checkpoint method is not dependent on the 
+  programming model and works with distributed memory or shared memory 
+  programs. 
+
+5. Method of Solution. 
+
+  PERM works closely with the dynamic memory allocator and monitors chunks 
+  of memory returned by the operating system and used by the application 
+  program. Whole chunks or portions thereof are written to persistent 
+  media at checkpoint time. 
+
+6. Computer(s) for which software is written. 
+
+  Any 32-bit or 64-bit machine with Linux, FreeBSD, or Mac OS X is 
+  supported. 
+
+7. Operating System. 
+
+  Linux, FreeBSD, Mac OS X (mmap support is required) 
+
+8. Programming Language(s) Used. 
+
+  C (66%), C++ (17%), HTML (16%), shell (1%) 
+
+9. Software Limitations. 
+
+  The anticipated total memory size used by the allocator must be given to 
+  PERM at initialization time. 
+
+10. Unique Features of the Software. 
+
+  * A key feature of the persistence module is that integration with the 
+  allocation functions (malloc, free, etc) of various heap managers is 
+  simple. Persistent functions are in one module (perma.c). This aids in 
+  experimentation with alternate malloc implementations or in the 
+  integration of PERM with a 'C++' class that supports multiple persistent 
+  heaps. 
+
+  * Persistent global variables can be registered dynamically with the 
+  perm(void *ptr, size_t size) function. 
+
+  * The usage of a memory mapped heap and a backup file are separated. Two 
+  functions (mflush & backup) operate independently on each. This allows 
+  the two files to reside on different media. 
+
+11. Related and Auxiliary Software.
+
+  The example release, called perm-je, is implemented with jemalloc, an 
+  open source dynamic memory allocator [1], and with a module containing 
+  the additional management functions (perma.c). Very little change was 
+  required in jemalloc to incorporate PERM. 
+
+  The new files added to the jemalloc source tree are:
+  doc/perm.html
+  include/jemalloc/pallocator.h
+  include/jemalloc/perma.h
+  src/perma.c
+  test/create.c
+  test/create.exp
+  test/restore.c
+  test/restore.exp
+  example.c
+  example.cpp
+  example.sh
+  COPYING.LLNL
+  README.PERM
+
+12. Other Programming or Operating Information or Restrictions. 
+
+  Since PERM is a library, it must be compiled and installed before it is 
+  linked with the application program. Instructions for installation are 
+  given in doc/perm.html. Example programs (example.c, example.cpp) are 
+  included in the release. 
+
+13. Hardware Requirements. 
+
+  Persistent media with free space greater than the anticipated total heap 
+  size must be accessible on the system. 
+
+14. Time Requirements. 
+
+  Backup times are dependent upon the speed of the media and size of the 
+  heap. 
+
+15. References.
+
+  [1] jemalloc, dynamic memory allocator, http://www.canonware.com/jemalloc/ 
