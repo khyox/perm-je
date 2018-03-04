@@ -2,7 +2,8 @@
 
 ### Overview 
 
-PERM is a 'C' library for persistent heap management and is intended for 
+[PERM](https://computation.llnl.gov/projects/memory-centric-architectures/perm)
+  is a 'C' library for persistent heap management and is intended for 
   use with a dynamic-memory allocator (e.g. malloc, free). The PERM memory 
   allocator replaces the standard 'C' dynamic memory allocation functions 
   with compatible versions that provide persistent memory to application 
@@ -38,6 +39,22 @@ Linux, FreeBSD, Mac OS X (mmap support is required)
 
 Please, read ``README.PERM`` for further details.
 
+### Tuning the kernel
+
+For PERM to work in the right conditions, some kernel tunning is advisable:
+
+* Turn off periodic flush to file and dirty ratio flush:
+```
+echo 0 > /proc/sys/vm/dirty_writeback_centisecs
+echo 100 > /proc/sys/vm/dirty_background_ratio
+echo 100 > /proc/sys/vm/dirty_ratio
+```
+* Turn off address space randomization:
+```
+echo 0 > /proc/sys/kernel/randomize_va_space 
+```
+
 ### References
 
-  [1] jemalloc, dynamic memory allocator, https://github.com/jemalloc/jemalloc 
+1. PERM, https://computation.llnl.gov/projects/memory-centric-architectures/perm
+2. jemalloc, dynamic memory allocator, https://github.com/jemalloc/jemalloc 
